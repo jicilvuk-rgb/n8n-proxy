@@ -1,39 +1,58 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  // Allow only POST
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  // Get webhook URL from Vercel environment variable
+  const webhookUrl = process.env.N8N_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    return res.status(500).json({
+      error: "Server misconfiguration: N8N_WEBHOOK_URL not set",
+    });
+  }
 
   try {
+    // Parse request body
     const { email } = req.body || {};
-    if (!email) return res.status(400).json({ error: "Missing email" });
 
-    // Your n8n webhook URL goes in an ENV var (NOT in index.html)
-    const N8N_URL = process.env.N8N_WEBHOOK_URL;
-    // Simple shared secret so random people can't spam your webhook
-    const N8N_SECRET = process.env.N8N_SHARED_SECRET;
+    if (!email) {
+      return res.status(400).json({
+        error: "Email is required",
+      });
+    }
 
-    if (!N8N_URL) return res.status(500).json({ error: "Missing N8N_WEBHOOK_URL env var" });
-    if (!N8N_SECRET) return res.status(500).json({ error: "Missing N8N_SHARED_SECRET env var" });
-
-    const r = await fetch(N8N_URL, {
+    // Call n8n webhook
+    const n8nResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-shared-secret": N8N_SECRET
       },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email }),
     });
 
-    const text = await r.text();
+    // Get response as text (because your webhook returns HTML)
+    const responseText = await n8nResponse.text();
 
-    // n8n should return JSON like: { "redirectUrl": "https://..." }
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      return res.status(502).json({ error: "n8n did not return JSON", raw: text.slice(0, 500) });
+    // If n8n failed
+    if (!n8nResponse.ok) {
+      return res.status(500).json({
+        error: "n8n webhook error",
+        details: responseText,
+      });
     }
 
-    return res.status(200).json(data);
-  } catch (e) {
-    return res.status(500).json({ error: String(e?.message || e) });
+    // Return HTML to browser
+    res.status(200);
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.send(responseText);
+
+  } catch (error) {
+    console.error("Proxy error:", error);
+    return res.status(500).json({
+      error: "Internal Server Error",
+      message: error.message,
+    });
   }
 }
