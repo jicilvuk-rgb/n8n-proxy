@@ -1,52 +1,83 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Rota Generator</title>
-    <style>
-      body { font-family: system-ui, Arial; max-width: 520px; margin: 40px auto; padding: 0 16px; }
-      input, button { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; }
-      .msg { margin-top: 12px; white-space: pre-wrap; }
-    </style>
-  </head>
-  <body>
-    <h2>Generate Rota</h2>
-    <input id="email" type="email" placeholder="Enter your email" />
-    <button id="btn">Generate</button>
-    <div class="msg" id="msg"></div>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rota Generator</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto;
+      max-width: 500px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
 
-    <script>
-      const btn = document.getElementById("btn");
-      const msg = document.getElementById("msg");
+    h2 {
+      margin-bottom: 20px;
+    }
 
-      btn.onclick = async () => {
-        msg.textContent = "Working...";
-        const email = document.getElementById("email").value.trim();
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
 
-        if (!email) { msg.textContent = "Enter an email."; return; }
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
-        try {
-          const res = await fetch("/api/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email })
-          });
+    #out {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
 
-          // If API returns a redirect URL, move the browser there
-          const data = await res.json();
-          if (!res.ok) throw new Error(data?.error || "Request failed");
+  <h2>Generate Rota</h2>
 
-          if (data.redirectUrl) {
-            window.location.href = data.redirectUrl;
-            return;
-          }
+  <input id="email" type="email" placeholder="Enter your email" />
+  <button id="go">Generate</button>
 
-          msg.textContent = JSON.stringify(data, null, 2);
-        } catch (e) {
-          msg.textContent = "Error: " + e.message;
+  <div id="out"></div>
+
+  <script>
+    document.getElementById("go").onclick = async () => {
+      const email = document.getElementById("email").value.trim();
+      if (!email) return;
+
+      document.getElementById("out").textContent = "Processing...";
+
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-shared-secret": "999999999888888887777777666666555554444333221"
+        },
+        body: JSON.stringify({ email })
+      });
+
+      try {
+        const data = await response.json();
+
+        if (data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else {
+          document.getElementById("out").textContent =
+            JSON.stringify(data, null, 2);
         }
-      };
-    </script>
-  </body>
+
+      } catch (err) {
+        document.getElementById("out").textContent =
+          "Error parsing response.";
+      }
+    };
+  </script>
+
+</body>
 </html>
