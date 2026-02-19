@@ -5,36 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Rota Generator</title>
   <style>
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto;
-      max-width: 500px;
-      margin: 60px auto;
-      padding: 0 20px;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-    }
-
-    input {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    #out {
-      margin-top: 20px;
-      white-space: pre-wrap;
-      color: #444;
-    }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto; max-width: 500px; margin: 60px auto; padding: 0 20px; }
+    h2 { margin-bottom: 20px; }
+    input { width: 100%; padding: 12px; font-size: 16px; margin-bottom: 10px; }
+    button { width: 100%; padding: 12px; font-size: 16px; cursor: pointer; }
+    #out { margin-top: 20px; white-space: pre-wrap; color: #444; }
   </style>
 </head>
 <body>
@@ -42,41 +17,60 @@
   <h2>Generate Rota</h2>
 
   <input id="email" type="email" placeholder="Enter your email" />
-  <button id="go">Generate</button>
+  <button id="go" type="button">Generate</button>
 
   <div id="out"></div>
 
   <script>
-    document.getElementById("go").onclick = async () => {
+    const out = document.getElementById("out");
+
+    document.getElementById("go").addEventListener("click", async () => {
       const email = document.getElementById("email").value.trim();
-      if (!email) return;
+      if (!email) {
+        out.textContent = "Enter an email.";
+        return;
+      }
 
-      document.getElementById("out").textContent = "Processing...";
+      out.textContent = "Processing...";
 
-      const response = await fetch("/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-shared-secret": "999999999888888887777777666666555554444333221"
-        },
-        body: JSON.stringify({ email })
-      });
-
+      let response;
       try {
-        const data = await response.json();
+        response = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+      } catch (e) {
+        out.textContent = "Network error calling /api/generate";
+        return;
+      }
 
+      // If server returns a redirect, browser usually follows automatically.
+      // But if it returns HTML, show it. If it returns JSON, handle redirectUrl.
+      const ct = (response.headers.get("content-type") || "").toLowerCase();
+
+      if (ct.includes("text/html")) {
+        const html = await response.text();
+        document.open();
+        document.write(html);
+        document.close();
+        return;
+      }
+
+      if (ct.includes("application/json")) {
+        const data = await response.json();
         if (data.redirectUrl) {
           window.location.href = data.redirectUrl;
         } else {
-          document.getElementById("out").textContent =
-            JSON.stringify(data, null, 2);
+          out.textContent = JSON.stringify(data, null, 2);
         }
-
-      } catch (err) {
-        document.getElementById("out").textContent =
-          "Error parsing response.";
+        return;
       }
-    };
+
+      // Fallback
+      const text = await response.text();
+      out.textContent = text || `Unexpected response (${response.status})`;
+    });
   </script>
 
 </body>
