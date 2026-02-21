@@ -1,37 +1,299 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Rota Generator</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto; max-width: 500px; margin: 60px auto; padding: 0 20px; }
-    h2 { margin-bottom: 20px; }
-    input { width: 100%; padding: 12px; font-size: 16px; margin-bottom: 10px; }
-    button { width: 100%; padding: 12px; font-size: 16px; cursor: pointer; }
-    #out { margin-top: 20px; white-space: pre-wrap; color: #444; }
+    :root{
+      --bg1:#0b1020;
+      --bg2:#0f1a3a;
+      --card: rgba(255,255,255,0.08);
+      --stroke: rgba(255,255,255,0.14);
+      --text:#e9ecff;
+      --muted: rgba(233,236,255,0.74);
+      --accent:#7c3aed;
+      --accent2:#22d3ee;
+      --danger:#fb7185;
+      --ok:#34d399;
+      --shadow: 0 22px 70px rgba(0,0,0,0.45);
+      --radius: 20px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.35), transparent 55%),
+        radial-gradient(900px 500px at 90% 20%, rgba(34,211,238,0.25), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .wrap{ width:min(880px, 100%); display:grid; gap:18px; grid-template-columns: 1.2fr 0.8fr; }
+    @media (max-width: 860px){ .wrap{ grid-template-columns: 1fr; } }
+
+    .card{
+      background: var(--card);
+      border:1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .topbar{
+      padding:18px 20px;
+      border-bottom:1px solid var(--stroke);
+      background: rgba(255,255,255,0.04);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:750; letter-spacing:0.2px; }
+    .logo{
+      width:30px; height:30px; border-radius:12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 12px 35px rgba(124,58,237,0.35);
+    }
+    .pill{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      white-space:nowrap;
+    }
+
+    .content{ padding:20px; }
+    h1{ margin:0 0 6px 0; font-size: clamp(22px, 2.6vw, 30px); line-height:1.15; }
+    p{ margin:0 0 16px 0; color: var(--muted); line-height:1.6; }
+
+    label{ display:block; font-size:13px; color: rgba(233,236,255,0.78); margin:0 0 8px; }
+    .field{
+      position:relative;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      background: rgba(255,255,255,0.06);
+      border:1px solid var(--stroke);
+      border-radius: 16px;
+      padding:12px 12px;
+    }
+    .field:focus-within{
+      border-color: rgba(124,58,237,0.55);
+      box-shadow: 0 0 0 4px rgba(124,58,237,0.15);
+    }
+
+    input{
+      width:100%;
+      border:0;
+      outline:none;
+      background: transparent;
+      color: var(--text);
+      font-size:16px;
+    }
+    input::placeholder{ color: rgba(233,236,255,0.55); }
+
+    .btn{
+      width:100%;
+      margin-top:12px;
+      border:1px solid rgba(124,58,237,0.55);
+      background: linear-gradient(135deg, rgba(124,58,237,0.92), rgba(34,211,238,0.58));
+      color: var(--text);
+      font-weight:750;
+      padding:12px 14px;
+      border-radius: 16px;
+      cursor:pointer;
+      transition: transform .06s ease, filter .2s ease, opacity .2s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+    }
+    .btn:hover{ filter: brightness(1.03); }
+    .btn:active{ transform: translateY(1px); }
+    .btn[disabled]{ opacity:.65; cursor:not-allowed; }
+
+    .meta{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      color: rgba(233,236,255,0.65);
+      font-size:12px;
+    }
+    .chip{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.04);
+      padding:6px 10px;
+      border-radius:999px;
+    }
+
+    #out{
+      margin-top:14px;
+      padding:12px 12px;
+      border-radius: 16px;
+      border:1px dashed rgba(233,236,255,0.22);
+      background: rgba(0,0,0,0.18);
+      color: rgba(233,236,255,0.85);
+      white-space: pre-wrap;
+      min-height: 52px;
+    }
+
+    .side{
+      padding:20px;
+    }
+    .kpi{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+    .row{
+      padding:12px 12px;
+      border-radius: 16px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,0.05);
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: rgba(34,211,238,0.9);
+      margin-top:5px;
+    }
+    .row b{ display:block; margin-bottom:4px; }
+    .row span{ color: var(--muted); font-size:13px; line-height:1.45; }
+
+    .status-ok{ border-color: rgba(52,211,153,0.45) !important; }
+    .status-err{ border-color: rgba(251,113,133,0.5) !important; }
   </style>
 </head>
+
 <body>
+  <div class="wrap">
 
-  <h2>Generate Rota</h2>
+    <!-- Main Card -->
+    <div class="card">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo"></div>
+          <div>Rota Generator</div>
+        </div>
+        <div class="pill">Webhook → /api/generate</div>
+      </div>
 
-  <input id="email" type="email" placeholder="Enter your email" />
-  <button id="go" type="button">Generate</button>
+      <div class="content">
+        <h1>Generate rota in one step</h1>
+        <p>Enter your email to run the automation. If your account isn’t registered, you’ll see a dedicated page.</p>
 
-  <div id="out"></div>
+        <label for="email">Work email</label>
+        <div class="field" id="fieldBox">
+          <input id="email" type="email" placeholder="name@company.com" autocomplete="email" />
+        </div>
+
+        <button class="btn" id="go" type="button">
+          <span id="btnText">Generate</span>
+          <span id="spinner" style="display:none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2a10 10 0 1 0 10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+        </button>
+
+        <div class="meta">
+          <div class="chip">HTML response supported</div>
+          <div class="chip">JSON redirect supported</div>
+          <div class="chip">No signup link (yet)</div>
+        </div>
+
+        <div id="out">Ready.</div>
+      </div>
+    </div>
+
+    <!-- Side Card (info) -->
+    <div class="card">
+      <div class="topbar">
+        <div class="brand">
+          <div style="width:30px;height:30px;border-radius:12px;background:rgba(255,255,255,0.08);border:1px solid var(--stroke);display:grid;place-items:center;">⚙️</div>
+          <div>How it works</div>
+        </div>
+        <div class="pill">Status-aware</div>
+      </div>
+
+      <div class="side">
+        <div class="kpi">
+          <div class="row">
+            <div class="dot"></div>
+            <div>
+              <b>Registered email</b>
+              <span>Returns JSON with <code>redirectUrl</code> or other data.</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="dot" style="background: rgba(251,113,133,0.9)"></div>
+            <div>
+              <b>Not registered</b>
+              <span>Returns HTML page (rendered instantly in the browser).</span>
+            </div>
+          </div>
+          <div class="row">
+            <div class="dot" style="background: rgba(124,58,237,0.9)"></div>
+            <div>
+              <b>Network error</b>
+              <span>Shows a readable error message in the output panel.</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;color:rgba(233,236,255,0.6);font-size:12px;">
+          Tip: Press <b>Enter</b> after typing the email.
+        </div>
+      </div>
+    </div>
+
+  </div>
 
   <script>
     const out = document.getElementById("out");
+    const go = document.getElementById("go");
+    const emailEl = document.getElementById("email");
+    const fieldBox = document.getElementById("fieldBox");
+    const btnText = document.getElementById("btnText");
+    const spinner = document.getElementById("spinner");
 
-    document.getElementById("go").addEventListener("click", async () => {
-      const email = document.getElementById("email").value.trim();
+    function setBusy(isBusy) {
+      go.disabled = isBusy;
+      btnText.textContent = isBusy ? "Processing..." : "Generate";
+      spinner.style.display = isBusy ? "inline-block" : "none";
+    }
+
+    function setStatus(kind, msg) {
+      out.textContent = msg;
+      fieldBox.classList.remove("status-ok", "status-err");
+      if (kind === "ok") fieldBox.classList.add("status-ok");
+      if (kind === "err") fieldBox.classList.add("status-err");
+    }
+
+    async function run() {
+      const email = emailEl.value.trim();
       if (!email) {
-        out.textContent = "Enter an email.";
+        setStatus("err", "Enter an email.");
+        emailEl.focus();
         return;
       }
 
-      out.textContent = "Processing...";
+      setBusy(true);
+      setStatus("", "Processing...");
 
       let response;
       try {
@@ -41,14 +303,14 @@
           body: JSON.stringify({ email })
         });
       } catch (e) {
-        out.textContent = "Network error calling /api/generate";
+        setBusy(false);
+        setStatus("err", "Network error calling /api/generate");
         return;
       }
 
-      // If server returns a redirect, browser usually follows automatically.
-      // But if it returns HTML, show it. If it returns JSON, handle redirectUrl.
       const ct = (response.headers.get("content-type") || "").toLowerCase();
 
+      // If server returns HTML, render it as a full page
       if (ct.includes("text/html")) {
         const html = await response.text();
         document.open();
@@ -57,21 +319,28 @@
         return;
       }
 
+      // If server returns JSON, handle redirectUrl if present
       if (ct.includes("application/json")) {
         const data = await response.json();
         if (data.redirectUrl) {
           window.location.href = data.redirectUrl;
-        } else {
-          out.textContent = JSON.stringify(data, null, 2);
+          return;
         }
+        setBusy(false);
+        setStatus("ok", JSON.stringify(data, null, 2));
         return;
       }
 
       // Fallback
       const text = await response.text();
-      out.textContent = text || `Unexpected response (${response.status})`;
+      setBusy(false);
+      setStatus(response.ok ? "ok" : "err", text || `Unexpected response (${response.status})`);
+    }
+
+    go.addEventListener("click", run);
+    emailEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") run();
     });
   </script>
-
 </body>
 </html>
